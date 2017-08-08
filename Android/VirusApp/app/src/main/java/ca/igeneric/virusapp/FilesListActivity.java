@@ -12,6 +12,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -27,7 +28,7 @@ public class FilesListActivity extends Activity {
     private File path;
     private ImageView imageView;
     private ListView listView;
-    private RelativeLayout frame;
+    private LinearLayout frame;
     private String fileSelected = "";
     private TextView imageTv, imageTv2;
     private boolean viewImage = false;

@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
+              android:gravity="center"
               android:orientation="vertical" >
 
     <LinearLayout
@@ -24,24 +25,17 @@
             android:id="@+id/bt_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:backgroundTint="#F00"
             android:text="@string/connect"/>
     </LinearLayout>
 
-    <FrameLayout
-        android:layout_width="match_parent"
+    <ImageView
+        android:id="@+id/imageMain"
+        android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:background="#C000"
-        android:layout_margin="20dp">
-
-        <ImageView
-            android:id="@+id/imageMain"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:contentDescription="@string/image"
-            android:layout_margin="20dp"/>
-
-    </FrameLayout>
+        android:contentDescription="@string/image"
+        android:layout_margin="20dp"/>
 
     <TextView
         android:id="@+id/imageName"
@@ -60,6 +54,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/newF"/>
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"/>
+
+        <Button
+            android:id="@+id/sendM"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/x3_send"/>
 
         <Space
             android:layout_width="0dp"

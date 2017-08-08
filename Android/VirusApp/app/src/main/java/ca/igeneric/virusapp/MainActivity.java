@@ -5,9 +5,11 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.os.Build;
@@ -17,6 +19,7 @@ import android.os.Message;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -58,6 +61,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 if (mBTService.getState() != Constants.STATE_CONNECTED) {
                     intent = new Intent(MainActivity.this, DeviceListActivity.class);
                     startActivityForResult(intent, Constants.REQUEST_CONNECT_DEVICE_INSECURE);
+                } else if (mBTService != null) {
+                    mBTService.stop();
                 }
                 break;
             case R.id.open:
@@ -70,7 +75,21 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 scaleB.setText("SCALE x"+scale);
                 break;
             case R.id.send:
-                if (mBTService.getState() == Constants.STATE_CONNECTED) sendRGB565array();
+                if (mBTService.getState() == Constants.STATE_CONNECTED) {
+                    sendRGB565array();
+                }
+                else Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.sendM:
+                if (mBTService.getState() == Constants.STATE_CONNECTED) {
+                    int temp = scale;
+                    scale = temp+2;
+                    sendRGB565array();
+                    scale = temp+1;
+                    sendRGB565array();
+                    scale = temp;
+                    sendRGB565array();
+                }
                 else Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
                 break;
         }
@@ -154,14 +173,14 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 case Constants.MESSAGE_DEVICE_NAME:
                     String mConnectedDeviceName = msg.getData().getString(Constants.DEVICE_NAME);
                     Toast.makeText(MainActivity.this, "Connected to " + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
-                    bt_status.setText("DISCONNECT");
+                    bt_status.setBackgroundTintList(ColorStateList.valueOf(Color.GREEN));
                     break;
                 case Constants.MESSAGE_TOAST:
                     String error = "";
                     error += msg.getData().getString(Constants.TOAST);
                     Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show();
                     if (error.equals("Unable to connect device") || error.equals("Device connection was lost")) {
-                        bt_status.setText("CONNECT");
+                        bt_status.setBackgroundTintList(ColorStateList.valueOf(Color.RED));
                     }
                     break;
             }
@@ -258,6 +277,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
         scaleB.setOnClickListener(this);
         Button send = findViewById(R.id.send);
         send.setOnClickListener(this);
+        Button sendM = findViewById(R.id.sendM);
+        sendM.setOnClickListener(this);
         imageMain = findViewById(R.id.imageMain);
         imageName = findViewById(R.id.imageName);
     }

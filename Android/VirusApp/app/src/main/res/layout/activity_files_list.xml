@@ -8,60 +8,74 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <RelativeLayout
+    <LinearLayout
         android:id="@+id/frame"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:gravity="center"
         android:background="#C000"
         android:visibility="gone">
 
-        <ImageView
-            android:id="@+id/imageView"
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:id="@+id/imageTv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:textColor="#FFF"/>
+
+            <TextView
+                android:id="@+id/imageTv2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:textColor="#FFF"/>
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:contentDescription="@string/image"/>
+
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:contentDescription="@string/image"
-            android:padding="30dp"/>
+            android:orientation="horizontal"
+            android:layout_margin="20dp">
 
-        <TextView
-            android:id="@+id/imageTv2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_above="@id/imageView"
-            android:textColor="#FFF"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="20dp"/>
+            <Button
+                android:id="@+id/imageBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/back"
+                android:textColor="#FFF"/>
 
-        <TextView
-            android:id="@+id/imageTv"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@id/imageTv2"
-            android:textColor="#FFF"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="20dp"/>
+            <Space
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"/>
 
-        <Button
-            android:id="@+id/imageBack"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentStart="true"
-            android:textColor="#FFF"
-            android:layout_margin="20dp"
-            android:text="@string/back"/>
+            <Button
+                android:id="@+id/imageSelect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/select"
+                android:textColor="#FFF"/>
 
-        <Button
-            android:id="@+id/imageSelect"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
-            android:textColor="#FFF"
-            android:layout_margin="20dp"
-            android:text="@string/select"/>
+        </LinearLayout>
 
-    </RelativeLayout>
+    </LinearLayout>
 
 </RelativeLayout>
