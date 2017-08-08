@@ -14,32 +14,65 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.NonNull;
+import android.util.DisplayMetrics;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.nio.ByteBuffer;
 
-public class MainActivity extends Activity {
-
-    private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
-    private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
-    private static final int REQUEST_ENABLE_BT = 3;
-    private static final int REQUEST_SELECT_FILE = 4;
+public class MainActivity extends Activity implements View.OnClickListener {
 
     private BluetoothAdapter mBluetoothAdapter = null;
     private BTService mBTService = null;
+    private ImageView imageMain;
+    private Button bt_status, scaleB;
+    private TextView imageName;
+    private Bitmap bmp = null;
+    private int scale = 3;
 
-    int scale = 3;
+    public static DisplayMetrics metrics;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initViews();
         checkSelfPermissions();
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
             Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
             this.finish();
+        }
+    }
+
+    @Override
+    public void onClick(View view) {
+        Intent intent;
+        switch (view.getId()) {
+            case R.id.bt_status:
+                if (mBTService.getState() != Constants.STATE_CONNECTED) {
+                    intent = new Intent(MainActivity.this, DeviceListActivity.class);
+                    startActivityForResult(intent, Constants.REQUEST_CONNECT_DEVICE_INSECURE);
+                }
+                break;
+            case R.id.open:
+                intent = new Intent(MainActivity.this, FilesListActivity.class);
+                startActivityForResult(intent, Constants.REQUEST_SELECT_FILE);
+                break;
+            case R.id.scale:
+                scale++;
+                if (scale == 4) scale = 1;
+                scaleB.setText("SCALE x"+scale);
+                break;
+            case R.id.send:
+                if (mBTService.getState() == Constants.STATE_CONNECTED) sendRGB565array();
+                else Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
+                break;
         }
     }
 
@@ -58,11 +91,11 @@ public class MainActivity extends Activity {
         super.onResume();
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+            startActivityForResult(enableIntent, Constants.REQUEST_ENABLE_BT);
         } else if (permissionsChecked) {
-            if (mBTService == null) setupChat();
+            if (mBTService == null) mBTService = new BTService(this, mHandler);
             else {
-                if (mBTService.getState() == BTService.STATE_NONE) {
+                if (mBTService.getState() == Constants.STATE_NONE) {
                     mBTService.start();
                 }
             }
@@ -78,7 +111,7 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (grantResults.length > 0) {
             switch (requestCode) {
                 case 0:
@@ -92,14 +125,8 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void setupChat() {
-        mBTService = new BTService(this, mHandler);
-        Intent listIntent = new Intent(MainActivity.this, DeviceListActivity.class);
-        startActivityForResult(listIntent, REQUEST_CONNECT_DEVICE_INSECURE);
-    }
-
     private void sendMessage(String message) {
-        if (mBTService.getState() != BTService.STATE_CONNECTED) {
+        if (mBTService.getState() != Constants.STATE_CONNECTED) {
             Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
             return;
         }
@@ -127,16 +154,14 @@ public class MainActivity extends Activity {
                 case Constants.MESSAGE_DEVICE_NAME:
                     String mConnectedDeviceName = msg.getData().getString(Constants.DEVICE_NAME);
                     Toast.makeText(MainActivity.this, "Connected to " + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
-                    Intent listIntent = new Intent(MainActivity.this, FilesListActivity.class);
-                    startActivityForResult(listIntent, REQUEST_SELECT_FILE);
+                    bt_status.setText("DISCONNECT");
                     break;
                 case Constants.MESSAGE_TOAST:
                     String error = "";
                     error += msg.getData().getString(Constants.TOAST);
                     Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show();
                     if (error.equals("Unable to connect device") || error.equals("Device connection was lost")) {
-                        Intent serverIntent = new Intent(MainActivity.this, DeviceListActivity.class);
-                        startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE_INSECURE);
+                        bt_status.setText("CONNECT");
                     }
                     break;
             }
@@ -145,28 +170,34 @@ public class MainActivity extends Activity {
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-            case REQUEST_CONNECT_DEVICE_SECURE:
+            case Constants.REQUEST_CONNECT_DEVICE_SECURE:
                 if (resultCode == Activity.RESULT_OK) {
                     connectDevice(data, true);
                 }
                 break;
-            case REQUEST_CONNECT_DEVICE_INSECURE:
+            case Constants.REQUEST_CONNECT_DEVICE_INSECURE:
                 if (resultCode == Activity.RESULT_OK) {
                     connectDevice(data, false);
                 }
                 break;
-            case REQUEST_ENABLE_BT:
+            case Constants.REQUEST_ENABLE_BT:
                 if (resultCode == Activity.RESULT_OK) {
-                    setupChat();
+                    mBTService = new BTService(this, mHandler);
                 } else {
                     this.finish();
                 }
-            case REQUEST_SELECT_FILE:
+            case Constants.REQUEST_SELECT_FILE:
                 if (resultCode == Activity.RESULT_OK) {
                     String fileName = "";
                     fileName += data.getStringExtra("FILE");
-                    Toast.makeText(MainActivity.this, fileName, Toast.LENGTH_LONG).show();
-                    sendRGB565array(fileName);
+                    bmp = BitmapFactory.decodeFile(fileName);
+                    imageMain.setImageBitmap(getResizedBitmap(bmp,MainActivity.metrics.widthPixels,MainActivity.metrics.heightPixels));
+                    String name = "";
+                    for (char c : fileName.toCharArray()) {
+                        if (c == '/') name = "";
+                        else name += c;
+                    }
+                    imageName.setText(name);
                 } else onDestroy();
                 break;
         }
@@ -178,19 +209,17 @@ public class MainActivity extends Activity {
         mBTService.connect(device, secure);
     }
 
-    private void sendRGB565array(String file) {
-        Bitmap bmp = BitmapFactory.decodeFile(file);
+    private void sendRGB565array() {
         if (bmp != null) {
-            bmp = getResizedBitmap(bmp,320/scale,480/scale);
+            Bitmap bmp2 = getResizedBitmap(bmp,320/scale,480/scale);
             char d = 44, s = 36, e = 38;
             int x = 0;
             int y = 200;
-            int w = bmp.getWidth();
-            int h = bmp.getHeight();
+            int w = bmp2.getWidth();
+            int h = bmp2.getHeight();
             String msg = ""+s+x+d+y+d+w+d+h+d+scale+e;
             sendMessage(msg);
-            byte[] toSend = rgb565ValuesFromBitmap(bmp);
-            mBTService.write(toSend);
+            mBTService.write(rgb565ValuesFromBitmap(bmp2));
         }
     }
 
@@ -208,7 +237,7 @@ public class MainActivity extends Activity {
         return buffer.array();
     }
 
-    public Bitmap getResizedBitmap(Bitmap bm, int newWidth, int newHeight) {
+    public static Bitmap getResizedBitmap(Bitmap bm, int newWidth, int newHeight) {
         int width = bm.getWidth();
         int height = bm.getHeight();
         float scaleWidth = ((float) newWidth) / width;
@@ -218,5 +247,36 @@ public class MainActivity extends Activity {
         Matrix matrix = new Matrix();
         matrix.postScale(scaleRatio, scaleRatio);
         return Bitmap.createBitmap(bm, 0, 0, width, height, matrix, false);
+    }
+
+    private void initViews() {
+        bt_status = findViewById(R.id.bt_status);
+        bt_status.setOnClickListener(this);
+        Button open = findViewById(R.id.open);
+        open.setOnClickListener(this);
+        scaleB = findViewById(R.id.scale);
+        scaleB.setOnClickListener(this);
+        Button send = findViewById(R.id.send);
+        send.setOnClickListener(this);
+        imageMain = findViewById(R.id.imageMain);
+        imageName = findViewById(R.id.imageName);
+    }
+
+    private boolean doubleBackToExitPressedOnce = false;
+
+    @Override
+    public void onBackPressed() {
+        if (doubleBackToExitPressedOnce) {
+            onDestroy();
+            return;
+        }
+        this.doubleBackToExitPressedOnce = true;
+        Toast.makeText(this, "Please click BACK again to exit", Toast.LENGTH_SHORT).show();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                doubleBackToExitPressedOnce = false;
+            }
+        }, 2000);
     }
 }

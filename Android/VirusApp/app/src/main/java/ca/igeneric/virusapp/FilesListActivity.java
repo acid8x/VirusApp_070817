@@ -2,18 +2,15 @@ package ca.igeneric.virusapp;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.support.annotation.NonNull;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.annotation.Nullable;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -31,19 +28,38 @@ public class FilesListActivity extends Activity {
     private ImageView imageView;
     private ListView listView;
     private RelativeLayout frame;
+    private String fileSelected = "";
+    private TextView imageTv, imageTv2;
     private boolean viewImage = false;
-    private DisplayMetrics metrics;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_files_list);
         setResult(RESULT_CANCELED);
         listView = findViewById(R.id.list);
         imageView = findViewById(R.id.imageView);
         frame = findViewById(R.id.frame);
+        imageTv = findViewById(R.id.imageTv);
+        imageTv2 = findViewById(R.id.imageTv2);
+        Button back = findViewById(R.id.imageBack);
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                viewImage = false;
+                frame.setVisibility(View.GONE);
+            }
+        });
+        Button select = findViewById(R.id.imageSelect);
+        select.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent();
+                intent.putExtra("FILE", fileSelected);
+                setResult(RESULT_OK, intent);
+                finish();
+            }
+        });
         directoryStructure.add("DCIM");
         directoryStructure.add("Camera");
         loadFilesList();
@@ -84,9 +100,8 @@ public class FilesListActivity extends Activity {
         for (String s : filList) list[index++] = new Item(s, R.drawable.file_icon);
 
         ListAdapter adapter = new ArrayAdapter<Item>(this, R.layout.dialog_item, android.R.id.text1, list) {
-            @NonNull
             @Override
-            public View getView(int position, View convertView, @NonNull ViewGroup parent) {
+            public View getView(int position, View convertView, ViewGroup parent) {
                 View view = super.getView(position, convertView, parent);
                 TextView textView = view.findViewById(android.R.id.text1);
                 textView.setCompoundDrawablesWithIntrinsicBounds(list[position].icon, 0, 0, 0);
@@ -103,23 +118,19 @@ public class FilesListActivity extends Activity {
                 if (list[i].icon == R.drawable.directory_icon) setPath(list[i].file);
                 else if (list[i].icon == R.drawable.directory_up) pathBack();
                 else {
-                    Intent intent = new Intent();
-                    intent.putExtra("FILE", getPath() + "/" + list[i].file);
-                    setResult(RESULT_OK, intent);
-                    finish();
-                    //// TODO: 2017-08-07 LEFT, RIGHT SWIPE + TITLE FILENAME + 2 BUTTONS BACK & SEND 
-                    /*
-                    imageView.setImageBitmap(Bitmap.createScaledBitmap(BitmapFactory.decodeFile(getPath() + "/" + chosenFile),metrics.widthPixels,metrics.heightPixels,false));
+                    fileSelected = getPath() + "/" + list[i].file;
+                    imageTv.setText(list[i].file);
+                    imageTv2.setText(getPath()+"/");
+                    imageView.setImageBitmap(MainActivity.getResizedBitmap(BitmapFactory.decodeFile(fileSelected),MainActivity.metrics.widthPixels,MainActivity.metrics.heightPixels));
                     frame.setVisibility(View.VISIBLE);
                     viewImage = true;
-                    */
                 }
             }
         });
     }
 
     private class Item {
-        public String file;
+        String file;
         int icon;
         Item(String file, Integer icon) {
             this.file = file;

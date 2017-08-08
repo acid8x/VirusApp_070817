@@ -2,9 +2,7 @@
 
 <manifest
     package="ca.igeneric.virusapp"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:versionCode="1"
-    android:versionName="1.0">
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
     <uses-permission android:name="android.permission.BLUETOOTH"/>
@@ -15,7 +13,7 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        android:theme="@android:style/Theme.Holo.Light.NoActionBar">
 
         <activity
             android:name=".MainActivity"
@@ -31,12 +29,12 @@
             android:name=".DeviceListActivity"
             android:configChanges="orientation|keyboardHidden"
             android:label="@string/select_device"
-            android:theme="@style/Theme.AppCompat.Light.Dialog"/>
+            android:theme="@android:style/Theme.Holo.Light.Dialog.NoActionBar"/>
 
         <activity
             android:name=".FilesListActivity"
             android:configChanges="orientation|keyboardHidden"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+            android:theme="@android:style/Theme.Holo.Light.NoActionBar"/>
 
     </application>
 

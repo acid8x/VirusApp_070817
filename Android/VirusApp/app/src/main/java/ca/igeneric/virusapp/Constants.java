@@ -11,6 +11,16 @@ interface Constants {
     int MESSAGE_DEVICE_NAME = 4;
     int MESSAGE_TOAST = 5;
 
+    int STATE_NONE = 0;
+    int STATE_LISTEN = 1;
+    int STATE_CONNECTING = 2;
+    int STATE_CONNECTED = 3;
+
+    int REQUEST_CONNECT_DEVICE_SECURE = 1;
+    int REQUEST_CONNECT_DEVICE_INSECURE = 2;
+    int REQUEST_ENABLE_BT = 3;
+    int REQUEST_SELECT_FILE = 4;
+
     String DEVICE_NAME = "device_name";
     String TOAST = "toast";
 	

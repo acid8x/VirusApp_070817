@@ -8,13 +8,14 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-public class BTService {
+class BTService {
 	
     private final BluetoothAdapter mAdapter;
     private final Handler mHandler;
@@ -24,14 +25,9 @@ public class BTService {
     private ConnectedThread mConnectedThread;
     private int mState;
 
-    public static final int STATE_NONE = 0;
-    public static final int STATE_LISTEN = 1;
-    public static final int STATE_CONNECTING = 2;
-    public static final int STATE_CONNECTED = 3;
-
-    public BTService(Context context, Handler handler) {
+    BTService(Context context, Handler handler) {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
-        mState = STATE_NONE;
+        mState = Constants.STATE_NONE;
         mHandler = handler;
     }
 
@@ -40,11 +36,11 @@ public class BTService {
         mHandler.obtainMessage(Constants.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
     }
 
-    public synchronized int getState() {
+    synchronized int getState() {
         return mState;
     }
 
-    public synchronized void start() {
+    synchronized void start() {
         if (mConnectThread != null) {
             mConnectThread.cancel();
             mConnectThread = null;
@@ -55,7 +51,7 @@ public class BTService {
             mConnectedThread = null;
         }
 
-        setState(STATE_LISTEN);
+        setState(Constants.STATE_LISTEN);
 
         if (mSecureAcceptThread == null) {
             mSecureAcceptThread = new AcceptThread(true);
@@ -67,8 +63,8 @@ public class BTService {
         }
     }
 
-    public synchronized void connect(BluetoothDevice device, boolean secure) {
-        if (mState == STATE_CONNECTING) {
+    synchronized void connect(BluetoothDevice device, boolean secure) {
+        if (mState == Constants.STATE_CONNECTING) {
             if (mConnectThread != null) {
                 mConnectThread.cancel();
                 mConnectThread = null;
@@ -82,10 +78,10 @@ public class BTService {
 
         mConnectThread = new ConnectThread(device, secure);
         mConnectThread.start();
-        setState(STATE_CONNECTING);
+        setState(Constants.STATE_CONNECTING);
     }
 
-    public synchronized void connected(BluetoothSocket socket, BluetoothDevice
+    private synchronized void connected(BluetoothSocket socket, BluetoothDevice
             device, final String socketType) {
         if (mConnectThread != null) {
             mConnectThread.cancel();
@@ -115,10 +111,10 @@ public class BTService {
         msg.setData(bundle);
         mHandler.sendMessage(msg);
 
-        setState(STATE_CONNECTED);
+        setState(Constants.STATE_CONNECTED);
     }
 
-    public synchronized void stop() {
+    synchronized void stop() {
         if (mConnectThread != null) {
             mConnectThread.cancel();
             mConnectThread = null;
@@ -138,13 +134,13 @@ public class BTService {
             mInsecureAcceptThread.cancel();
             mInsecureAcceptThread = null;
         }
-        setState(STATE_NONE);
+        setState(Constants.STATE_NONE);
     }
 
-    public void write(byte[] out) {
+    void write(byte[] out) {
         ConnectedThread r;
         synchronized (this) {
-            if (mState != STATE_CONNECTED) return;
+            if (mState != Constants.STATE_CONNECTED) return;
             r = mConnectedThread;
         }
         r.write(out);
@@ -173,7 +169,7 @@ public class BTService {
         private final BluetoothServerSocket mmServerSocket;
         private String mSocketType;
 
-        public AcceptThread(boolean secure) {
+        AcceptThread(boolean secure) {
             BluetoothServerSocket tmp = null;
             mSocketType = secure ? "Secure" : "Insecure";
 
@@ -186,7 +182,7 @@ public class BTService {
                             Constants.NAME_INSECURE, Constants.MY_UUID_INSECURE);
                 }
             } catch (IOException e) {
-
+                Log.e(getName(),e.getMessage());
             }
             mmServerSocket = tmp;
         }
@@ -196,7 +192,7 @@ public class BTService {
 
             BluetoothSocket socket = null;
 
-            while (mState != STATE_CONNECTED) {
+            while (mState != Constants.STATE_CONNECTED) {
                 try {
                     socket = mmServerSocket.accept();
                 } catch (IOException e) {
@@ -207,17 +203,17 @@ public class BTService {
                 if (socket != null) {
                     synchronized (BTService.this) {
                         switch (mState) {
-                            case STATE_LISTEN:
-                            case STATE_CONNECTING:
+                            case Constants.STATE_LISTEN:
+                            case Constants.STATE_CONNECTING:
                                 connected(socket, socket.getRemoteDevice(),
                                         mSocketType);
                                 break;
-                            case STATE_NONE:
-                            case STATE_CONNECTED:
+                            case Constants.STATE_NONE:
+                            case Constants.STATE_CONNECTED:
                                 try {
                                     socket.close();
                                 } catch (IOException e) {
-
+                                    Log.e(getName(),e.getMessage());
                                 }
                                 break;
                         }
@@ -226,11 +222,11 @@ public class BTService {
             }
         }
 
-        public void cancel() {
+        void cancel() {
             try {
                 mmServerSocket.close();
             } catch (IOException e) {
-
+                Log.e(getName(),e.getMessage());
             }
         }
     }
@@ -240,7 +236,7 @@ public class BTService {
         private final BluetoothDevice mmDevice;
         private String mSocketType;
 
-        public ConnectThread(BluetoothDevice device, boolean secure) {
+        ConnectThread(BluetoothDevice device, boolean secure) {
             mmDevice = device;
             BluetoothSocket tmp = null;
             mSocketType = secure ? "Secure" : "Insecure";
@@ -254,7 +250,7 @@ public class BTService {
                             Constants.MY_UUID_INSECURE);
                 }
             } catch (IOException e) {
-
+                Log.e(getName(),e.getMessage());
             }
             mmSocket = tmp;
         }
@@ -269,7 +265,7 @@ public class BTService {
                 try {
                     mmSocket.close();
                 } catch (IOException e2) {
-
+                    Log.e(getName(),e2.getMessage());
                 }
                 connectionFailed();
                 return;
@@ -282,10 +278,11 @@ public class BTService {
             connected(mmSocket, mmDevice, mSocketType);
         }
 
-        public void cancel() {
+        void cancel() {
             try {
                 mmSocket.close();
             } catch (IOException e) {
+                Log.e(getName(),e.getMessage());
             }
         }
     }
@@ -295,7 +292,7 @@ public class BTService {
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
 
-        public ConnectedThread(BluetoothSocket socket, String socketType) {
+        ConnectedThread(BluetoothSocket socket, String socketType) {
             mmSocket = socket;
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
@@ -304,6 +301,7 @@ public class BTService {
                 tmpIn = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
             } catch (IOException e) {
+                Log.e(getName(),e.getMessage());
             }
 
             mmInStream = tmpIn;
@@ -317,17 +315,15 @@ public class BTService {
             while (true) {
                 try {
                     int data = mmInStream.read();
-                    if (data == 0x0A) {
-                    } else if (data == 0x0D) {
+                    if (data == 0x0D) {
                         buffer = new byte[arr_byte.size()];
                         for(int i = 0 ; i < arr_byte.size() ; i++) {
                             buffer[i] = arr_byte.get(i).byteValue();
                         }
                         mHandler.obtainMessage(Constants.MESSAGE_READ, buffer.length, -1, buffer).sendToTarget();
                         arr_byte = new ArrayList<>();
-                    } else {
+                    } else if (data != 0x0A){
                         arr_byte.add(data);
-
                     }
                 } catch (IOException e) {
                     connectionLost();
@@ -337,21 +333,21 @@ public class BTService {
             }
         }
 
-        public void write(byte[] buffer) {
+        void write(byte[] buffer) {
             try {
                 mmOutStream.write(buffer);
                 mHandler.obtainMessage(Constants.MESSAGE_WRITE, -1, -1, buffer)
                         .sendToTarget();
             } catch (IOException e) {
-
+                Log.e(getName(),e.getMessage());
             }
         }
 
-        public void cancel() {
+        void cancel() {
             try {
                 mmSocket.close();
             } catch (IOException e) {
-
+                Log.e(getName(),e.getMessage());
             }
         }
     }
